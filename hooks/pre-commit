@@ -1,0 +1,38 @@
+#!/bin/bash
+JS_FILES=$(git diff --cached --name-only | grep '\.js\?$')
+
+# Prevent ESLint help message if no files matched
+if [[ $JS_FILES = "" ]] ; then
+  exit 0
+fi
+
+echo 'Js validate'
+
+failed=0
+for file in ${JS_FILES}; do
+  git show :$file | node_modules/.bin/eslint $file
+  if [[ $? != 0 ]] ; then
+    failed=1
+  fi
+done;
+
+echo 'SCSS validate' 
+
+SCSS_FILES=$(git diff --cached --name-only | grep '\.scss\?$')
+
+if [[ $SCSS_FILES = "" ]] ; then
+  exit 0
+fi
+
+failed=0
+for file in ${SCSS_FILES}; do
+  git show :$file | scss-lint $file
+  if [[ $? != 0 ]] ; then
+    failed=1
+  fi
+done;
+
+if [[ $failed != 0 ]] ; then
+  echo "ESLint or ScssLint failed, git commit denied!"
+  exit $failed
+fi
